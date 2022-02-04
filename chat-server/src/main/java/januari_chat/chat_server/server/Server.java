@@ -14,28 +14,32 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
+// хранит список подключенных клиентов,
+// предназначенный для управления соединением с клиентом и рассылкой сообщений.
+//Централизованное построение
 public class Server {
     public static final String REGEX = "%!%"; //разделитель
-    private static final int PORT = 8189;
+    private  final int PORT = 8189;
 
     //ссылаемся на интерфейс
-    private AuthService authService;
-    private List<ClientHandler> clientHandlers;
+    private final AuthService authService;
+    private final List<ClientHandler> clientHandlers;
 
     public Server(AuthService authService) {
+       // PORT = PropertyReader.getInstance().getPort();
         this.clientHandlers = new ArrayList<>();
         this.authService = authService;
     }
 
-    public void start() {
-        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
+    public void start() {//serverSocket создает socket/занимает порт
+        try (ServerSocket serverSocket = new ServerSocket(PORT)) {//слушаем порт
             System.out.println("Server start!");
             while (true) {
                 System.out.println("Waiting for connection......");
-                Socket socket = serverSocket.accept();
+                var socket = serverSocket.accept();// accept() создает соединение, когда кто то постучался в порт
                 System.out.println("Client connected");
-                ClientHandler clientHandler = new ClientHandler(socket, this);
-                clientHandler.handle();
+                var clientHandler = new ClientHandler(socket, this);//через socket работаем с клиентом
+                clientHandler.handle(); //clientHandler - их много внутри них socket
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -45,12 +49,37 @@ public class Server {
         }
     }
 
-    public void privateMessage(String from, String message) {
+    public void privateMessage(String sender, String recipient, String message, ClientHandler senderHandler) {
 
+        //ищет того кому хотим отправить сообщение
+        //ищем его в getHandlerByUser по имени пользователя (recipient);
+        var handler = getHandlerByUser(recipient);
+        //если  не нашли то отправляем отправителю ошибку в виде сообщения
+        if (handler == null){//если нет получателя
+            senderHandler.send(String.format("/error" + REGEX + "recipient not found: " + recipient));
+            return;
+        }
+        //если получатель есть то формируем сообщение
+        message = String.format("Private" + sender + "->>>" + recipient + ": " + message);
+        handler.send(message);//отправка получателю
+        senderHandler.send(message);
+    }
+
+
+
+
+    private ClientHandler getHandlerByUser(String username) {
+        for (ClientHandler clientHandler : clientHandlers) {
+            if (clientHandler.getUserNick().equals(username)) {
+                return clientHandler;
+            }
+        }
+        return null;
     }
 
     public void broadcastMessage(String from, String message) {
-        message = "/broadcast" + REGEX + from + REGEX + message;
+       // message = "/broadcast" + REGEX + from + REGEX + message;
+        message = String.format("[%s]: %s", from, message);
         for (ClientHandler clientHandler : clientHandlers) {
             clientHandler.send(message);
         }
@@ -68,6 +97,8 @@ public class Server {
         sendOnlineClients();
     }
 
+
+
     //отправка списка клиентов онлайн
     public void sendOnlineClients() {
         var sb = new StringBuilder("/list");
@@ -83,7 +114,7 @@ public class Server {
         }
     }
 
-    //проверка была ли авторизация уже
+//Для блокировки возможности авторизоваться нескольким клиентам под одной учётной записью используется
     public synchronized boolean isNickBusy(String nick) {
         for (ClientHandler clientHandler : clientHandlers) {
             if (clientHandler.getUserNick().equals(nick)) {

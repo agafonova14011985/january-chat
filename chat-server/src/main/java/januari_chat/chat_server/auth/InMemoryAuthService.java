@@ -27,11 +27,15 @@ public class InMemoryAuthService implements AuthService {
     @Override
     public void start() {
         System.out.println("Auth service started");
+        System.out.println("Сервис аутентификации запущен");
+
     }
 
     @Override
     public void stop() {
         System.out.println("Auth service stopped");
+        System.out.println("Сервис аутентификации остановлен");
+
     }
 
     @Override //метод авторизации

@@ -5,7 +5,9 @@ import januari_chat.chat_server.error.WrongCredentialsException;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.Arrays;
 
 public class ClientHandler {
     private Socket socket;
@@ -15,28 +17,31 @@ public class ClientHandler {
     private Server server;
     private String user;
 
+    //запускает отдельный поток для работы с клиентом
     public ClientHandler(Socket socket, Server server) {
         try {
             this.server = server;
             this.socket = socket;
-            this.in = new DataInputStream(socket.getInputStream());
-            this.out = new DataOutputStream(socket.getOutputStream());
-            System.out.println("Handler created");
+            this.in = new DataInputStream(socket.getInputStream());//DataInputStream для удобства отправления джава примитивов и записявает строку в виде байт и считываем
+            this.out = new DataOutputStream(socket.getOutputStream());//DataOutputStream-своего рода обертка потоков ввода и вывода
+            System.out.println("Handler created / Обработчик создан ");
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    //обработка/когда подключился клиент мы его должны авторизовать
+    //обработка/
     public void handle() {
         handlerThread = new Thread(() -> {
             authorize();
             while (!Thread.currentThread().isInterrupted() && socket.isConnected()) {
                 try {
-                    var message = in.readUTF();
+                    var message = in.readUTF();//считываем строку в виде байт
                     handleMessage(message);
                 } catch (IOException e) {
                     e.printStackTrace();
+                   // System.out.println("Connection broken with user " + user);
+                   server.removeAuthorizedClientToList(this);
                 }
             }
         });
@@ -47,11 +52,21 @@ public class ClientHandler {
     private void handleMessage(String message) {
         var splitMessage = message.split(Server.REGEX);
         switch (splitMessage[0]) {
+
+        //если мы получили "/w" . то у сервера вызываем метод privateMessage
+          case "/w":
+              server.privateMessage(this.user, splitMessage[1], splitMessage[2], this);
+              break;
             case "/broadcast":
                 server.broadcastMessage(user, splitMessage[1]);
                 break;
-        }
-    }
+      }
+            }
+
+
+
+
+
 
     //обработка/когда подключился клиент мы его должны авторизовать
     private void authorize() {
@@ -87,16 +102,17 @@ public class ClientHandler {
 
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                e.printStackTrace();//выводит полную информацию об исключении в консоль
             }
         }
     }
 
+    //отправка сообщения в виде строки
     public void send(String msg) {
         try {
             out.writeUTF(msg);
         } catch (IOException e) {
-            e.printStackTrace();
+            e.printStackTrace();//выводит полную информацию об исключении в консоль
         }
     }
 
