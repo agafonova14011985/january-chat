@@ -18,8 +18,7 @@ public class ClientHandler {
     private Thread handlerThread;
     private Server server;
     private String user;
-    static long TIME_LIMIT = 120 * 1000;
-    Map<ClientHandler, Long> nonAuthorizedSockets = new HashMap<>();
+
 
     public ClientHandler(Socket socket, Server server) {
         try {
@@ -81,7 +80,7 @@ public class ClientHandler {
                     send("register_ok:");
                     break;
 
-  ////////////////////вариант отключения клиента/////////////////////////////////////////
+  ////////////////////вариант отключения клиента1/////////////////////////////////////////
                     case "quit":
                     server.getAuthService().stop();
                     send("quit:");
@@ -96,12 +95,15 @@ public class ClientHandler {
 
     private void authorize() {
 
-
-
         System.out.println("Authorizing");
         while (true) {
             try {
                 var message = in.readUTF();
+
+                /////////////////////////////////////
+                TimeoutChecker.set(this);
+            //    if (!server.) break;
+                ////////////////////////////////////////
                 if (message.startsWith("/auth")) {
                     var parsedAuthMessage = message.split(Server.REGEX);
                     var response = "";
@@ -123,6 +125,8 @@ public class ClientHandler {
 
                     } else {
                         this.user = nickname;
+                        TimeoutChecker.unset(this);
+
                         server.addAuthorizedClientToList(this);
                         send("/auth_ok" + Server.REGEX + nickname);
                         break;
@@ -137,32 +141,7 @@ public class ClientHandler {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-                    ///закрытие соединения
-
-                    while (true) {
-                            nonAuthorizedSockets.forEach(((client, aLong) -> {
-                                if ((System.currentTimeMillis() - aLong) > TIME_LIMIT) {
-                                    client.send("Время на авторизацию истекло.\n Соединение разорвано.");
-                                    try {
-                                        client.socket.close();
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                            }));
-                            try {
-                                Thread.sleep(1000);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-
-
-                        }
-                    }
-/////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
+                }
            } catch (IOException e) {
                 e.printStackTrace();
                 //при закрытии канала
@@ -170,6 +149,19 @@ public class ClientHandler {
             }
 
     }}
+
+
+
+
+
+    public void closeSocket() {
+        try {
+            socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     public void send(String msg) {
         try {
