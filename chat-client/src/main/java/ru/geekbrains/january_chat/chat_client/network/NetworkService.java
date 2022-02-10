@@ -59,6 +59,7 @@ public class NetworkService {
         try {
             if (socket != null && !socket.isClosed()) {
                 socket.close();
+
             }
         } catch (IOException e) {
             e.printStackTrace();
