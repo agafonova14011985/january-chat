@@ -7,7 +7,8 @@ public class PropertyReader {
     private static PropertyReader instance;
     private String host;
     private int port;
-    private long authTimeout;
+    private long authTimeout;// + поле таймаут по авторизации
+
 
     private PropertyReader() {
         getPropValues();
@@ -27,7 +28,7 @@ public class PropertyReader {
             properties.load(inputStream);
             host = properties.getProperty("host");
             port = Integer.parseInt(properties.getProperty("port"));
-            authTimeout = Long.parseLong(properties.getProperty("auth.timeout"));
+            authTimeout = Long.parseLong(properties.getProperty("auth.timeout"));//+
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -42,7 +43,7 @@ public class PropertyReader {
         return port;
     }
 
-    public long getAuthTimeout() {
+    public long getAuthTimeout() { // + возвращаем значение
         return authTimeout;
     }
 }

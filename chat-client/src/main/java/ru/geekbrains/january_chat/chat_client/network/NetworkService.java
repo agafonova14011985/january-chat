@@ -39,7 +39,7 @@ public class NetworkService {
                 e.printStackTrace();
             }
         });
-        thread.setDaemon(true);
+       // thread.setDaemon(true);
         thread.start();
     }
 
