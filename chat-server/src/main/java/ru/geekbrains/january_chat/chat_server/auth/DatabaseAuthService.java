@@ -18,8 +18,8 @@ public class DatabaseAuthService  implements AuthService{
     }
 
     @Override
-    public String authorizeUserByLoginAndPassword(String login, String password) {
-        return dbService.getClientsNameByLoginPass(login, password);
+    public String authorizeUserByLoginAndPassword(String login, String pass) {
+        return dbService.getClientsNameByLoginPass(login, pass);
     }
 
     @Override
