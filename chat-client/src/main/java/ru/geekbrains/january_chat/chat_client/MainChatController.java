@@ -16,12 +16,16 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
+import java.util.List;
+
 
 public class MainChatController implements Initializable, MessageProcessor {
     public static final String REGEX = "%!%";
 
     private String nick;
     private NetworkService networkService;
+    //добавляем поле
+    private HistoryMaker historyMaker;
 
     @FXML
     private VBox changeNickPanel;
@@ -112,6 +116,15 @@ public class MainChatController implements Initializable, MessageProcessor {
                 this.nick = splitMessage[1];
                 loginPanel.setVisible(false);
                 mainChatPanel.setVisible(true);
+                //инициализация historyMaker после того как клиент успешно авторизовался
+                //так как имя файла истории = логину клиента
+                this.historyMaker = new HistoryMaker(nick);
+                //получаем прошлую историю
+                var history = historyMaker.readHistory();
+                for (String s : history) {
+                    //добавляем истории для просмотра клиенту
+                    mainChatArea.appendText(s + System.lineSeparator());
+                }
                 break;
             case "/error":
                 showError(splitMessage[1]);
@@ -132,6 +145,9 @@ public class MainChatController implements Initializable, MessageProcessor {
                 break;
             default:
                 mainChatArea.appendText(splitMessage[0] + System.lineSeparator());
+                //записываем сообщение
+                historyMaker.writeHistory(splitMessage[0] + System.lineSeparator());
+
                 break;
         }
     }
