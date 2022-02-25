@@ -1,4 +1,6 @@
-package januari_chat.chat_server.error;
+
+
+package ru.geekbrains.january_chat.chat_server.error;
 
 public class WrongCredentialsException extends RuntimeException {
     public WrongCredentialsException() {
