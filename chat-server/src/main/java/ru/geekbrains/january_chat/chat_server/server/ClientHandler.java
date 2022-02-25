@@ -14,7 +14,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class ClientHandler {
-    private final long authTimeout;
+    private final long authTimeout; // + поле таймаут по авторизации
     private Socket socket;
     private DataOutputStream out;
     private DataInputStream in;
@@ -23,7 +23,7 @@ public class ClientHandler {
     private String user;
 
     public ClientHandler(Socket socket, Server server) {
-        authTimeout = PropertyReader.getInstance().getAuthTimeout();
+        authTimeout = PropertyReader.getInstance().getAuthTimeout();// +  authTimeout = последовательность методов
         try {
             this.server = server;
             this.socket = socket;
@@ -88,22 +88,22 @@ public class ClientHandler {
 
     private void authorize() {
         System.out.println("Authorizing");
-        var timer = new Timer(true);
+        var timer = new Timer(true);//присваивается ссылка на Timer, поток не демон
         timer.schedule(new TimerTask() {
             @Override
-            public void run() {
+            public void run() { // timer- вызывает -schedule- выполняется указанная задача в определенное время
                 try {
-                    if (user == null) {
+                    if (user == null) {//если user не авторизовался = 0, то отправляем сообщение об ошибке
                         send("/error" + Server.REGEX + "Authentication timeout!\nPlease, try again later!");
-                        Thread.sleep(50);
-                        socket.close();
-                        System.out.println("Connection with client closed");
+                        Thread.sleep(50);//даем немного времени
+                        socket.close();//отключаем соединение
+                        System.out.println("Connection with client closed");//выдаем сообщение
                     }
                 } catch (InterruptedException | IOException e) {
-                    e.getStackTrace();
+                    e.getStackTrace();//ловим исключение
                 }
             }
-        }, authTimeout);
+        }, authTimeout);//возвращаем значение
         try {
             while (true) {
                 var message = in.readUTF();
