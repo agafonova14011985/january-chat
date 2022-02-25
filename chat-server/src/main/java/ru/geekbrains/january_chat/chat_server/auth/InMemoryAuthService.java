@@ -9,7 +9,7 @@ import java.util.List;
 public class InMemoryAuthService implements AuthService {
 
     private List<User> users;
-
+//работает в памяти с предварительно имеющимися логинами и паролем
     public InMemoryAuthService() {
         this.users = new ArrayList<>();
         users.addAll(List.of(
