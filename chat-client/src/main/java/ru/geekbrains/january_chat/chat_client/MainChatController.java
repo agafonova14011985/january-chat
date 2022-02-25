@@ -152,7 +152,7 @@ public class MainChatController implements Initializable, MessageProcessor {
 
     private void showError(String message) {
         var alert = new Alert(Alert.AlertType.ERROR,
-                "An error occured: " + message,
+                "An error occurred: " + message,
                 ButtonType.OK);
         alert.showAndWait();
     }
