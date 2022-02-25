@@ -5,20 +5,25 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 
-//сервер отвечающий за работу сети
+//сервер отвечающий за работу сети/подключение к серверу
+//читает первоначальные сообщения/и отдаем контроллеру обработку сообщения
 public class NetworkService {
-    private static final String HOST = "127.0.0.1";
-    private static final int PORT = 8189;
-    private Socket socket;
+    private  final String HOST = "127.0.0.1";
+    private  final int PORT = 8189;
+    private Socket socket;//абстракция описывающая связь сервера и клиента в нашем случае
     private DataInputStream in;
     private DataOutputStream out;
     private MessageProcessor messageProcessor;
 
     public NetworkService(MessageProcessor messageProcessor)  {
+
+        //HOST = PropertyReader.getInstance().getHost();
+        //PORT = PropertyReader.getInstance().getPort();
         //создаем
         this.messageProcessor = messageProcessor;
     }
 
+    //создает соединение сокет, он не слушает порт а просто говорит о запросе , соединие в сервер сокет, создается сокет
     public void connect() throws IOException {
         this.socket = new Socket(HOST, PORT);
         this.in = new DataInputStream(socket.getInputStream());
@@ -45,12 +50,15 @@ public class NetworkService {
 
     //отправка сообщений
     public void sendMessage(String message) {
+
         try {
             out.writeUTF(message);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
+
+
 
     public boolean isConnected() {
         return socket != null && !socket.isClosed();

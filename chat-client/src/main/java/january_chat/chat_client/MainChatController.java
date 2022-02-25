@@ -17,6 +17,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
 
+//управляет содержимым
 public class MainChatController implements Initializable, MessageProcessor {
     public static final String REGEX = "%!%";
 
@@ -58,17 +59,22 @@ public class MainChatController implements Initializable, MessageProcessor {
     }
     public void showAbout(ActionEvent actionEvent) {
     }
+
     public void sendMessage(ActionEvent actionEvent) {
         var message = inputField.getText();
         if (message.isBlank()) {
             return;
         }
-/*
-var recipient = contactList.getSelectionModel().getSelectedItem();
-mainChatArea.appendText(recipient + ": " + message + System.lineSeparator());
- */
-        networkService.sendMessage("/broadcast" + REGEX  + message);
-        inputField.clear();
+        //получаем выбранный элемент -getSelectedItem()  из contactList
+        var recipient = contactList.getSelectionModel().getSelectedItem();
+    //mainChatArea.appendText(recipient + ": " + message + System.lineSeparator());
+        //если выбранные не все, то можно послать приватное сообщение
+        if (!recipient.equals("ALL")){ // отправляем с приставкой "/w" +  разделитель + получатель + разделитель + сообщение
+            networkService.sendMessage("/w" + REGEX + recipient + REGEX + message);
+            //в ином случае : отправляем с приставкой "/broadcast" и тд
+               }else {
+                networkService.sendMessage("/broadcast" + REGEX  + message);}
+                inputField.clear();
     }
 
     @Override
@@ -114,7 +120,7 @@ mainChatArea.appendText(recipient + ": " + message + System.lineSeparator());
 
     private void showError(String message) {
         var alert = new Alert(Alert.AlertType.ERROR,
-                "An error occured: " + message,
+                "An error occurred: " + message,
                 ButtonType.OK);
         alert.showAndWait();
     }
