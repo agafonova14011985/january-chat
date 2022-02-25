@@ -1,17 +1,20 @@
 
 package ru.geekbrains.january_chat.chat_server.server;
 
+import ru.geekbrains.january_chat.chat_server.auth.AuthService;
 import ru.geekbrains.january_chat.chat_server.error.WrongCredentialsException;
+import ru.geekbrains.january_chat.props.PropertyReader;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class ClientHandler {
+    private final long authTimeout;
     private Socket socket;
     private DataOutputStream out;
     private DataInputStream in;
@@ -19,14 +22,13 @@ public class ClientHandler {
     private Server server;
     private String user;
 
-
     public ClientHandler(Socket socket, Server server) {
+        authTimeout = PropertyReader.getInstance().getAuthTimeout();
         try {
             this.server = server;
             this.socket = socket;
             this.in = new DataInputStream(socket.getInputStream());
             this.out = new DataOutputStream(socket.getOutputStream());
-
             System.out.println("Handler created");
         } catch (IOException e) {
             System.out.println("Connection broken with user " + user);
@@ -42,8 +44,7 @@ public class ClientHandler {
                     handleMessage(message);
                 } catch (IOException e) {
                     System.out.println("Connection broken with user " + user);
-                    server.removeAuthorizedClientFromList(this);
-                    break;
+                    server.removeAuthorizedClientFromList(this);break;
                 }
             }
         });
@@ -79,14 +80,6 @@ public class ClientHandler {
                     server.getAuthService().createNewUser(splitMessage[1], splitMessage[2], splitMessage[3]);
                     send("register_ok:");
                     break;
-
-  ////////////////////вариант отключения клиента1/////////////////////////////////////////
-                    case "quit":
-                    server.getAuthService().stop();
-                    send("quit:");
-                    this.socket.close(); break;
-////////////////////////////////////////////////////////////////////////////////////////
-
             }
         } catch (IOException e) {
             send("/error" + Server.REGEX + e.getMessage());
@@ -94,16 +87,26 @@ public class ClientHandler {
     }
 
     private void authorize() {
-
         System.out.println("Authorizing");
-        while (true) {
-            try {
+        var timer = new Timer(true);
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                try {
+                    if (user == null) {
+                        send("/error" + Server.REGEX + "Authentication timeout!\nPlease, try again later!");
+                        Thread.sleep(50);
+                        socket.close();
+                        System.out.println("Connection with client closed");
+                    }
+                } catch (InterruptedException | IOException e) {
+                    e.getStackTrace();
+                }
+            }
+        }, authTimeout);
+        try {
+            while (true) {
                 var message = in.readUTF();
-
-                /////////////////////////////////////
-                TimeoutChecker.set(this);
-            //    if (!server.) break;
-                ////////////////////////////////////////
                 if (message.startsWith("/auth")) {
                     var parsedAuthMessage = message.split(Server.REGEX);
                     var response = "";
@@ -121,47 +124,19 @@ public class ClientHandler {
                     }
                     if (!response.equals("")) {
                         send(response);
-
-
                     } else {
                         this.user = nickname;
-                        TimeoutChecker.unset(this);
-
                         server.addAuthorizedClientToList(this);
                         send("/auth_ok" + Server.REGEX + nickname);
                         break;
-
                     }
 
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////
-                    //закрытие соединения 2 вариант
-                    // this.socket.setSoTimeout();
-                    // if (this.socket.setSoTimeout()) {
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
                 }
-           } catch (IOException e) {
-                e.printStackTrace();
-                //при закрытии канала
-
             }
-
-    }}
-
-
-
-
-
-    public void closeSocket() {
-        try {
-            socket.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-
 
     public void send(String msg) {
         try {

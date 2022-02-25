@@ -6,6 +6,7 @@ import ru.geekbrains.january_chat.props.PropertyReader;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,6 +31,8 @@ public class Server {
                 System.out.println("Client connected");
                 var clientHandler = new ClientHandler(socket, this);
                 clientHandler.handle();
+
+
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -38,6 +41,10 @@ public class Server {
             shutdown();
         }
     }
+
+
+
+
 
     public void privateMessage(String sender, String recipient, String message, ClientHandler senderHandler) {
         var handler = getHandlerByUser(recipient);
