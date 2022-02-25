@@ -19,6 +19,7 @@ public class ChatApplication extends Application {
         Parent parent = loader.load();
         Scene scene = new Scene(parent);
         primaryStage.setScene(scene);
+        primaryStage.setTitle("January Chat");
         primaryStage.show();
     }
 }
