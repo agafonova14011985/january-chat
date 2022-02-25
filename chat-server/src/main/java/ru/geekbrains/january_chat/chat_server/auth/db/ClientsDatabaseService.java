@@ -11,18 +11,20 @@ public class ClientsDatabaseService {
     private static final String CONNECTION =
             "jdbc:sqlite:db/clients.db";
     private static final String GET_USERNAME =
-            "select username from clients where login = ? end password = ?;";
+            "select username from clients where login = ? and password = ?;";
     private static final String CHANGE_USERNAME =
             "update clients set username = ? where login =?;";
     private static final String CREATE_DB =
-            "create table if not exists clients (id integer primary key autoincrement," +
+            "CREATE TABLE IF NOT EXISTS clients (id    INTEGER PRIMARY KEY AUTOINCREMENT," +
             " login text unique not null, password text not null, username text unique not null);";
+
+
+
     private static final String INIT_DB =
-            "insert int clients (login, password, username) + " + "values " +
-            "('login1', 'password1', 'user1'), " +
-            "('login2', 'password2', 'user2'), " +
-            "('login3', 'password3', 'user3')," +
-            "('login4', 'password4', 'user4'); ";
+            "insert into clients (login, password, username) values ('log1', 'pass1', 'user1'); ";
+
+
+
     private static ClientsDatabaseService instance;
     private Connection connection;
     PreparedStatement getClientStatement;
@@ -33,7 +35,7 @@ public class ClientsDatabaseService {
             connect();
         }catch (ClassNotFoundException | SQLException e){
             e.printStackTrace();
-        }createDb();
+        }//createDb();
     }
 
 
@@ -58,12 +60,14 @@ public class ClientsDatabaseService {
 
 
 //авторизация, используем PreparedStatement- для безопастности
-    public String getClientsNameByLoginPass(String login, String password) {//подключение к БД из таб. клиентов строка юзеров
-        try //(PreparedStatement ps = connection.prepareStatement(GET_USERNAME))
+    public String getClientsNameByLoginPass(String login, String pass) {//подключение к БД из таб. клиентов строка юзеров
+        try (PreparedStatement ps = connection.prepareStatement(GET_USERNAME))
         {
             getClientStatement.setString(1, login);//отправка логина и пароля
-            getClientStatement.setString(2, password);
+            getClientStatement.setString(2, pass);
             ResultSet rs = getClientStatement.executeQuery();//запрос отправляется методом executeQuery()
+
+
             if(rs.next()){//смотрим запись которая нам пришла
                 String result = rs.getString("username");//если получили , то присваиваем ее в результат
                 rs.close();
