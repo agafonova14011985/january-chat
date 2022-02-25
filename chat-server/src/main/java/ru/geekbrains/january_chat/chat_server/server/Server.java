@@ -9,17 +9,22 @@ import java.net.ServerSocket;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Server {
     public static final String REGEX = "%!%";
     private final int port = 8189;
     private final AuthService authService;
     private final List<ClientHandler> clientHandlers;
+    private  ExecutorService executorService; //добавляем ExecutorService в сервер
 
     public Server(AuthService authService) {
        // port = PropertyReader.getInstance().getPort();
         this.clientHandlers = new ArrayList<>();
         this.authService = authService;
+        this.executorService = Executors.newCachedThreadPool();
     }
 
     public void start() {
@@ -98,6 +103,8 @@ public class Server {
     }
 
     private void shutdown() {
+        authService.stop();
+        executorService.shutdown();//завершение
 
     }
 
@@ -113,6 +120,11 @@ public class Server {
         }
         return null;
     }
+
+    public ExecutorService getExecutorService() {
+        return executorService;
+    }
+
 }
 
 /*

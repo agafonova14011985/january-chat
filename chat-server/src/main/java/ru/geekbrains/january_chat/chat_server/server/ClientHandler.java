@@ -12,6 +12,7 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ExecutorService;
 
 public class ClientHandler {
     private final long authTimeout; // + поле таймаут по авторизации
@@ -21,6 +22,7 @@ public class ClientHandler {
     private Thread handlerThread;
     private Server server;
     private String user;
+    private ExecutorService executorService;//+
 
     public ClientHandler(Socket socket, Server server) {
         authTimeout = PropertyReader.getInstance().getAuthTimeout();// +  authTimeout = последовательность методов
@@ -30,13 +32,16 @@ public class ClientHandler {
             this.in = new DataInputStream(socket.getInputStream());
             this.out = new DataOutputStream(socket.getOutputStream());
             System.out.println("Handler created");
+            this.executorService = server.getExecutorService();//возвращаем
         } catch (IOException e) {
             System.out.println("Connection broken with user " + user);
         }
     }
 
     public void handle() {
-        handlerThread = new Thread(() -> {
+      //  handlerThread = new Thread(() -> {
+        //запускаем его в потоке который прослушивает клиента
+        executorService.execute(()->{//вызываем execute
             authorize();
             while (!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
                 try {
@@ -44,11 +49,11 @@ public class ClientHandler {
                     handleMessage(message);
                 } catch (IOException e) {
                     System.out.println("Connection broken with user " + user);
-                    server.removeAuthorizedClientFromList(this);break;
+                    server.removeAuthorizedClientFromList(this);
                 }
             }
         });
-        handlerThread.start();
+      //  handlerThread.start();
     }
 
     private void handleMessage(String message) {
@@ -89,16 +94,17 @@ public class ClientHandler {
     private void authorize() {
         System.out.println("Authorizing");
         var timer = new Timer(true);//присваивается ссылка на Timer, поток не демон
-        timer.schedule(new TimerTask() {
+        timer.schedule(new TimerTask() {// timer- вызывает -schedule- выполняется указанная задача в определенное время
             @Override
-            public void run() { // timer- вызывает -schedule- выполняется указанная задача в определенное время
-                try {
+            public void run() {
+//
+                try { synchronized (this){
                     if (user == null) {//если user не авторизовался = 0, то отправляем сообщение об ошибке
                         send("/error" + Server.REGEX + "Authentication timeout!\nPlease, try again later!");
                         Thread.sleep(50);//даем немного времени
                         socket.close();//отключаем соединение
                         System.out.println("Connection with client closed");//выдаем сообщение
-                    }
+                    }}
                 } catch (InterruptedException | IOException e) {
                     e.getStackTrace();//ловим исключение
                 }
