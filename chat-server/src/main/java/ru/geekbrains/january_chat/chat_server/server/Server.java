@@ -1,7 +1,10 @@
 
 package ru.geekbrains.january_chat.chat_server.server;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import ru.geekbrains.january_chat.chat_server.auth.AuthService;
+import ru.geekbrains.january_chat.chat_server.error.Logging;
 import ru.geekbrains.january_chat.props.PropertyReader;
 
 import java.io.IOException;
@@ -14,17 +17,24 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Server {
+
     public static final String REGEX = "%!%";
     private final int port = 8189;
     private final AuthService authService;
     private final List<ClientHandler> clientHandlers;
     private  ExecutorService executorService; //добавляем ExecutorService в сервер
 
+    private static final Logger log = LogManager.getLogger(Logging.class);//берем логер для данного класса
+
+
     public Server(AuthService authService) {
        // port = PropertyReader.getInstance().getPort();
         this.clientHandlers = new ArrayList<>();
         this.authService = authService;
         this.executorService = Executors.newCachedThreadPool();
+
+
+
     }
 
     public void start() {
@@ -33,16 +43,22 @@ public class Server {
             authService.start();
             while (true) {
                 System.out.println("Waiting for connection......");
+                log.info("Сервер запущен. Ожидаем клиентов...");
                 var socket = serverSocket.accept();
                 System.out.println("Client connected");
+                log.info("Клиент подключился");
                 var clientHandler = new ClientHandler(socket, this);
                 clientHandler.handle();
 
 
             }
         } catch (IOException e) {
+            log.error("Исключение IOException");
             e.printStackTrace();
+
+
         } finally {
+
             authService.stop();
             shutdown();
         }
@@ -59,12 +75,15 @@ public class Server {
             return;
         }
         message = String.format("[PRIVATE] [%s] -> [%s]: %s", sender, recipient, message);
+        log.info("Клиент отправил приватное сообщение");
         handler.send(message);
         senderHandler.send(message);
     }
 
     public void broadcastMessage(String from, String message) {
         message = String.format("[%s]: %s", from, message);
+        log.info("Клиент отправил сообщение всем");
+
         for (ClientHandler clientHandler : clientHandlers) {
             clientHandler.send(message);
         }
@@ -72,6 +91,8 @@ public class Server {
 
     public synchronized void addAuthorizedClientToList(ClientHandler clientHandler) {
         clientHandlers.add(clientHandler);
+        log.info("Клиент добавлен");
+
         sendOnlineClients();
     }
 
@@ -99,16 +120,22 @@ public class Server {
                 return true;
             }
         }
+
         return false;
     }
 
     private void shutdown() {
+        log.info("shutdown");
+
         authService.stop();
+
         executorService.shutdown();//завершение
 
     }
 
     public AuthService getAuthService() {
+        log.info("Клиент авторизовался");
+
         return authService;
     }
 

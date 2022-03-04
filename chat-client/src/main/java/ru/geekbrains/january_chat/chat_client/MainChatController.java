@@ -77,6 +77,7 @@ public class MainChatController implements Initializable, MessageProcessor {
 
     public void exit(ActionEvent actionEvent) {
         System.exit(1);
+
     }
 
     public void showHelp(ActionEvent actionEvent) {

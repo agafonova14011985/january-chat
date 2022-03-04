@@ -34,6 +34,7 @@ public class ClientHandler {
             System.out.println("Handler created");
             this.executorService = server.getExecutorService();//возвращаем
         } catch (IOException e) {
+
             System.out.println("Connection broken with user " + user);
         }
     }
@@ -49,7 +50,7 @@ public class ClientHandler {
                     handleMessage(message);
                 } catch (IOException e) {
                     System.out.println("Connection broken with user " + user);
-                    server.removeAuthorizedClientFromList(this);
+                    server.removeAuthorizedClientFromList(this);break;
                 }
             }
         });
